@@ -24,6 +24,9 @@ cnvrtFiles(args['-indir'], tempdir)
 # Concatinate .xlsx files
 df = combineFiles(tempdir)
 df.to_csv(args['-outcsv'])
+#df.to_excel(args['-outcsv'])
+
+print(df)
 
 # Delete files in temp dir
 deleteFiles(tempdir)
