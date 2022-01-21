@@ -61,4 +61,4 @@ cd CombineCsvFiles
 ```
 
 ### Install Dependencies
-Next, install the dependencies needed for the project. This can be done by simply running 'setup.bat' by doulble clicking on it in the file explorer. Alternatively, you can run this script by executing the following command on the command line from within the project directory.
+
