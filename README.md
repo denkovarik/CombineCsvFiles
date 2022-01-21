@@ -7,8 +7,7 @@ Combines csv files into one assuming that the headers are identical.
 This project was developed for the Window's Operating System on a 64 bit machine.
 
 ### Dependencies
-* Git
-* Python 3
+* Python
 * PIP
 * pandas
 
