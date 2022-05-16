@@ -18,10 +18,21 @@ def combineFiles(tempdir):
     for i in tqdm(range(len(os.listdir(tempdir))), desc="Concatinating .xlsx files..."):
         f = os.listdir(tempdir)[i]
         fname = tempdir + '\\' + f
+        if fname.split(".")[-1] == 'xls':
+            readXlsFile(fname)
+        
         df = pd.read_excel(fname)
-        allDfs.append(df)
+
+        if df.columns[0] == 'Unnamed: 0':
+            df = df.iloc[: , 1:]
+        # Remove rows with the 'Created Date' in the first column        
+        df = df[~df[df.columns[0]].str.contains("Created Date", na=False)]
+        
+        allDfs.append(df.drop_duplicates())
     outDf = pd.concat(allDfs)
+    outDf.drop_duplicates()
     return outDf
+    
 
 
 def cnvrtFiles(dpath, tempdir):
