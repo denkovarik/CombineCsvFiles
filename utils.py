@@ -9,44 +9,50 @@ import win32com.client as win32
 from tqdm import tqdm
 
 
-def combineFiles(tempdir):
+def combineFiles(dir, args):
     """
     Combines all excel files in dir into one
-    :param tempdir: Directory containing the excel files to combine
+    :param dir: Directory containing the excel files to combine
+    :param args: A dictionary of command line arguments
     """
     allDfs = []
-    for i in tqdm(range(len(os.listdir(tempdir))), desc="Concatinating .xlsx files..."):
-        f = os.listdir(tempdir)[i]
-        fname = tempdir + '\\' + f
-        if fname.split(".")[-1] == 'xls':
-            readXlsFile(fname)
-        
-        df = pd.read_excel(fname)
+    fileType = 'csv'
+    files = grabFileType(dir, fileType)
+    
+    for i in tqdm(range(len(files)), desc="Concatinating .xlsx files..."):
+        f = files[i]
+        fname = dir + '\\' + f
+        if fname.split(".")[-1] == fileType:
+            df = pd.read_csv(fname)
+            #allDfs.append(df.drop_duplicates())
+            allDfs.append(df)
 
-        if df.columns[0] == 'Unnamed: 0':
-            df = df.iloc[: , 1:]
-        # Remove rows with the 'Created Date' in the first column        
-        df = df[~df[df.columns[0]].str.contains("Created Date", na=False)]
-        
-        allDfs.append(df.drop_duplicates())
     outDf = pd.concat(allDfs)
-    outDf.drop_duplicates()
+    #outDf.drop_duplicates()
     return outDf
     
 
 
-def cnvrtFiles(dpath, tempdir):
+def cnvrtFiles(dpath, outdir):
     """
     Converts all .xls files in 'dpath' dir to .xlsx.
     :param dpath: Full path to the directory containing the files to convert
-    :param tempdir: Full path the the temp dir
+    :param outdir: Full path the the out dir
     """
-    for i in tqdm(range(len(os.listdir(dpath))), desc="Converting files to .xlsx..."):
-        f = os.listdir(dpath)[i]
+    files = os.listdir(dpath)
+    xls_files = []
+    # Grab just the '.xls' files
+    for i in range(len(files)):
+        filename = files[i][:files[i].rfind('.')]
+        if files[i].split('.')[-1] == 'xls' and filename + '.xlsx' not in files:
+            xls_files.append(files[i])
+    # Now convert the files
+    for i in tqdm(range(len(xls_files)), desc="Converting files to .xlsx..."):
+        f = xls_files[i]
         fname = dpath + f
         excel = win32.gencache.EnsureDispatch('Excel.Application')
         wb = excel.Workbooks.Open(fname)
-        wb.SaveAs(tempdir + f + "x", FileFormat = 51)    #FileFormat = 51 is for .xlsx extension
+        wb.SaveAs(outdir + f + "x", FileFormat = 51)    #FileFormat = 51 is for .xlsx extension
         wb.Close()                               #FileFormat = 56 is for .xls extension
         excel.Application.Quit()
         
@@ -70,6 +76,26 @@ def displayUsage():
     print(usage)
     
     
+def grabFileType(dirpath, ext):
+    """
+    Just creates a list of files with a specified ext and returns them as a 
+    list of strings.
+    
+    :param dirpath: The target directory path
+    :param ext: The filetype of interest
+    :return: List of filenames that have a certain extension defined by the 
+             'ext' param
+    """
+    allFiles = os.listdir(dirpath)
+    files = []
+    # Grab the right file extensions
+    for i in range(len(allFiles)):
+        filename = allFiles[i][:allFiles[i].rfind('.')]
+        if allFiles[i].split('.')[-1] == ext:
+            files.append(allFiles[i])
+    return files
+    
+    
 def parseCmdArgs():
     """
     Parses and validates the cmd args.
@@ -79,7 +105,7 @@ def parseCmdArgs():
         displayUsage()
         exit()
     # Validate cmd args
-    if len(sys.argv) != 5:
+    if len(sys.argv) < 5 or len(sys.argv) > 7:
         print("Invalid number of command line arguments\n")
         displayUsage()
         exit()    
@@ -107,3 +133,41 @@ def parseCmdArgs():
     return args   
 
     
+def writeCsv(df, filename):
+    """
+    Writes pandas dataframe to a .csv file
+    :param df: Pandas dataframe to write to csv
+    :param filename: The filename of the panda's dataframe
+    """
+    headers = df.columns.tolist()
+    data = [headers] + df.to_numpy().tolist()
+
+    csv = open(filename, "w+")
+    err = open('errors.txt', "w+") 
+    for row in data:
+        l = list(row)
+        for i in range(len(l)):
+            cell = str(l[i]).strip()
+            for c in cell:
+                c2w = c
+             
+                try:
+                    csv.write(c2w)
+                except:
+                    #print("Error writing ' " + str(c2w) + "' in '" + cell + "'")
+                    #print(c2w.encode("utf-8"))
+                    #print(chr(ord(c2w)))
+                    #print(row)
+                    #print("") 
+                    #err.write('#' + "Error writing ' " + cell + "' in " + row)
+                    #err.write(chr(ord('\u045b')))
+                    #err.write("elif c2w == '" + str(c2w.encode("utf-8")) + "':\n")
+                    #err.write("    c2w = ''\n")
+                    csv.write('?')
+            if i < len(l) - 1:
+                csv.write(',')
+        csv.write('\n')
+
+    ## close the csv file
+    csv.close()
+    err.close()
