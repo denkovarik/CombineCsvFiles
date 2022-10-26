@@ -23,7 +23,8 @@ def combineFiles(dir, args):
         f = files[i]
         fname = dir + '\\' + f
         if fname.split(".")[-1] == fileType:
-            df = pd.read_csv(fname)
+            pass
+            df = pd.read_csv(fname,low_memory=False)
             #allDfs.append(df.drop_duplicates())
             allDfs.append(df)
 
